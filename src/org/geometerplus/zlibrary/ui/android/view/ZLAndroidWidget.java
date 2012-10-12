@@ -56,7 +56,6 @@ public class ZLAndroidWidget extends View implements ZLViewWidget, View.OnLongCl
 		setFocusableInTouchMode(true);
 		setDrawingCacheEnabled(false);
 		setOnLongClickListener(this);
-	  	setLayerType(LAYER_TYPE_SOFTWARE, null);
 	}
 
 	@Override
@@ -93,16 +92,22 @@ public class ZLAndroidWidget extends View implements ZLViewWidget, View.OnLongCl
 
 	private AnimationProvider myAnimationProvider;
 	private ZLView.Animation myAnimationType;
+	private int myStoredLayerType = -1;
 	private AnimationProvider getAnimationProvider() {
 		final ZLView.Animation type = ZLApplication.Instance().getCurrentView().getAnimationType();
 		if (myAnimationProvider == null || myAnimationType != type) {
 			myAnimationType = type;
+			if (myStoredLayerType != -1) {
+	  			setLayerType(myStoredLayerType, null);
+			}
 			switch (type) {
 				case none:
 					myAnimationProvider = new NoneAnimationProvider(myBitmapManager);
 					break;
 				case curl:
+					myStoredLayerType = getLayerType();
 					myAnimationProvider = new CurlAnimationProvider(myBitmapManager);
+	  				setLayerType(LAYER_TYPE_SOFTWARE, null);
 					break;
 				case slide:
 					myAnimationProvider = new SlideAnimationProvider(myBitmapManager);
@@ -250,10 +255,23 @@ public class ZLAndroidWidget extends View implements ZLViewWidget, View.OnLongCl
 		canvas.drawBitmap(myFooterBitmap, 0, getHeight() - footer.getHeight(), myPaint);
 	}
 
-	private void onDrawStatic(Canvas canvas) {
+	private void onDrawStatic(final Canvas canvas) {
 		myBitmapManager.setSize(getWidth(), getMainAreaHeight());
 		canvas.drawBitmap(myBitmapManager.getBitmap(ZLView.PageIndex.current), 0, 0, myPaint);
 		drawFooter(canvas);
+		new Thread() {
+			@Override
+			public void run() {
+				final ZLView view = ZLApplication.Instance().getCurrentView();
+				final ZLAndroidPaintContext context = new ZLAndroidPaintContext(
+					canvas,
+					getWidth(),
+					getMainAreaHeight(),
+					view.isScrollbarShown() ? getVerticalScrollbarWidth() : 0
+				);
+				view.preparePage(context, ZLView.PageIndex.next);
+			}
+		}.start();
 	}
 
 	@Override
