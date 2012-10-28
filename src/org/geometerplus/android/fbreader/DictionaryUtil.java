@@ -132,6 +132,13 @@ public abstract class DictionaryUtil {
 		String FULLSCREEN = "EXTRA_FULLSCREEN";
 	}
 
+    private interface MinicardContract {
+        static final String EXTRA_HEIGHT = "com.abbyy.mobile.lingvo.intent.extra.HEIGHT";
+        static final String EXTRA_GRAVITY = "com.abbyy.mobile.lingvo.intent.extra.EXTRA_GRAVITY";
+        static final String EXTRA_LIGHT_THEME = "com.abbyy.mobile.lingvo.intent.extra.LIGHT_THEME";
+        static final String EXTRA_ENABLE_SUGGESTIONS = "com.abbyy.mobile.lingvo.intent.extra.ENABLE_SUGGESTIONS";
+    }
+
 	public static void init(final Context context) {
 		if (ourInfos.isEmpty()) {
 			final Thread initThread = new Thread(new Runnable() {
@@ -280,7 +287,22 @@ public abstract class DictionaryUtil {
 				final ZLAndroidLibrary zlibrary = (ZLAndroidLibrary)ZLAndroidLibrary.Instance();
 				intent.putExtra(ColorDict3.FULLSCREEN, !zlibrary.ShowStatusBarOption.getValue());
 			}
-			activity.startActivity(intent);
+            else if ("Lingvo".equals(info.Id)) {
+                final DisplayMetrics metrics = new DisplayMetrics();
+                activity.getWindowManager().getDefaultDisplay().getMetrics(metrics);
+                final int screenHeight = metrics.heightPixels;
+                final int topSpace = selectionTop;
+                final int bottomSpace = metrics.heightPixels - selectionBottom;
+                final boolean showAtBottom = bottomSpace >= topSpace;
+                final int space = (showAtBottom ? bottomSpace : topSpace) - 20;
+                final int maxHeight = Math.min(400, screenHeight * 2 / 3);
+                final int minHeight = Math.min(200, screenHeight * 2 / 3);
+                intent.putExtra(MinicardContract.EXTRA_HEIGHT, Math.max(minHeight, Math.min(maxHeight, space)));
+                intent.putExtra(MinicardContract.EXTRA_GRAVITY, showAtBottom ? Gravity.BOTTOM : Gravity.TOP);
+                intent.putExtra(MinicardContract.EXTRA_LIGHT_THEME, true);          // TODO use day/night colors
+                intent.putExtra(MinicardContract.EXTRA_ENABLE_SUGGESTIONS, true);
+            }
+            activity.startActivity(intent);
 		} catch (ActivityNotFoundException e) {
 			DictionaryUtil.installDictionaryIfNotInstalled(activity, singleWord);
 		}

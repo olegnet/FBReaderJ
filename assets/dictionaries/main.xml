@@ -75,4 +75,11 @@
 		dataKey="query"
 		pattern="%s"
 	/>
+  <dictionary
+      id="Lingvo"
+      title="Lingvo"
+      action="com.abbyy.mobile.lingvo.intent.action.TRANSLATE"
+      dataKey="com.abbyy.mobile.lingvo.intent.extra.TEXT"
+      pattern="%s"
+      />
 </dictionaries>
